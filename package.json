@@ -10,5 +10,9 @@
     "dev:frontend": "npm run dev --workspace frontend",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true
   }
 }
