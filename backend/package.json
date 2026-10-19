@@ -11,13 +11,19 @@
     "dev:backend": "npm run db:migrate && tsx watch src/index.ts"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
+    "express-session": "^1.19.0",
     "kysely": "^0.28.0",
     "pg": "^8.13.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "^5.0.0",
+    "@types/express-session": "^1.19.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.11",
     "tsx": "^4.19.0",
