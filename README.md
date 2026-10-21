@@ -40,3 +40,33 @@ npm run build
 Health endpoints: `/api/health` checks Express; `/api/health/database` checks Postgres. Database tables and migrations are a separate backlog task.
 
 Stop the database with `docker compose stop`. This preserves local data. Keep `.env` private; commit only `.env.example`.
+<<<<<<< Updated upstream
+=======
+
+## Backend tests
+
+Tests use a separate Postgres database named `campus_lost_found_test`.
+
+With the local database running, create the test database once:
+
+```bash
+sudo docker compose exec db createdb -U postgres campus_lost_found_test
+```
+
+Run migrations and tests from the repository root:
+
+```bash
+export TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/campus_lost_found_test"
+DATABASE_URL="$TEST_DATABASE_URL" npm run db:migrate --workspace backend
+npm test --workspace backend
+```
+
+GitHub Actions runs backend TypeScript checks, migrations, tests, and the build on pushes and pull requests using a temporary Postgres database.
+
+## UI Mockups
+
+- [UI mockup PDF](docs/ui/Campus_Lost_and_Found_UI_Mockups.pdf)
+- [Editable Figma mockups](https://www.figma.com/design/j8zK1GFZyarZG81fkDPPL4)
+
+Uses “Campus Lost and Found” as the working product name.
+>>>>>>> Stashed changes
