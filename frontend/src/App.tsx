@@ -1,3 +1,4 @@
+import{AuthForms} from "./AuthForms";
 import { useState } from "react";
 export function App() {
   const [status, setStatus] = useState("Not checked");
@@ -13,5 +14,7 @@ export function App() {
   }
   return <main><h1>Campus Lost and Found</h1><p>Development setup</p>
     <button onClick={() => void checkConnection()}>Check connection</button>
-    <p role="status">{status}</p></main>;
+    <p role="status">{status}</p>
+    <AuthForms />
+    </main>;
 }
