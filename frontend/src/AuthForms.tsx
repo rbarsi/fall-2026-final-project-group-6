@@ -1,4 +1,5 @@
 
+import { Profile } from "./Profile";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   signup,
@@ -142,7 +143,22 @@ export function AuthForms() {
           <button onClick={() => void handleLogout()} disabled={loading}>
             {loading ? "Logging out..." : "Log Out"}
           </button>
+          <Profile
+        user={user}
+        onProfileUpdated={setUser}
+        onAccountDeleted={() => {
+          setUser(null);
+          setMode("login");
+          setName("");
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
+          setError("");
+          setMessage("Your account has been deleted");
+        }}
+        />
         </div>
+        
       ) : (
         <div>
           <h2>{mode === "signup" ? "Create Account" : "Sign In"}</h2>
