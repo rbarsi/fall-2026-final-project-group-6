@@ -51,19 +51,24 @@ router.post('/', async (req, res) => {
             return res.status(401).json({ error: 'ERROR. You are not signed in.'});
         }
     */
-        const userId = req.session?.userId || 1;
+        let userId = req.session?.userId;
         //req.session.userId
 
         if (!userId) {
-            return res.status(401).json({ error: 'USER ID NOT FOUND.'});
+            const firstUser = await (db as any)
+                .selectFrom('users')
+                .select('id')
+                .executeTakeFirst();
+
+        userId = firstUser ? firstUser.id : 1;
         }
 
-        const { title, description, price, category } = req.body;
-
+        const { title, description, category, status } = req.body;
+/*
         if (!req.session || !req.session.userId) {
             return res.status(401).json({ error: 'UNAUTHORIZED' });
         }
-        
+        */
         const newListing = await (db as any)
         .insertInto('listings')
         .values({
@@ -71,6 +76,7 @@ router.post('/', async (req, res) => {
             title,
             description,
             category,
+            status: status || 'lost',
         })
         .returningAll()
         .executeTakeFirst();
