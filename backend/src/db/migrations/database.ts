@@ -14,8 +14,8 @@ export interface ListingTable {
     id?: number;
     title: string;
     description: string;
-    //price: string;
     category: string;
+    status?: string;
     user_id: number;
     created_at?: Date;
 }

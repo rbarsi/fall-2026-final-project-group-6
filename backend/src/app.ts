@@ -1,22 +1,12 @@
 import express from "express";
 import { sql } from "kysely";
 import { db } from "./db/database.js";
--
-sql`ALTER TABLE listings ADD COLUMN IF NOT EXISTS category VARCHAR(255);`
-.execute(db)
-.catch((err) => console.log("column check:", err.message));
-
-sql`ALTER TABLE listings ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'lost';`
-.execute(db)
-.catch((err) => console.log("status column check:", err.message));
 
 //new imports
 import { sessionMiddleware } from "./session.js";
 import { authRouter } from "./routes/auth.js";
-import { requireAuth } from "./middleware/requireAuth.js";
 import cors from 'cors';
-import { router as listingsRouter} from '../src/routes/listings.js'
-import { error } from "console";
+import { router as listingsRouter} from './routes/listings.js'
 
 export const app = express();
 
@@ -45,11 +35,3 @@ app.get("/api/health/database", async (_req, res) => {
 app.use("/api/auth", authRouter);
 
 app.use("/api/listings", listingsRouter);
-/*
-// put requireAuth after example account has been created
-// put after ", and before (_req
-app.post("/api/listings", (_req, res) => {
-  res.json({
-    message: "You are allowed to create a listing"
-  });
-});*/

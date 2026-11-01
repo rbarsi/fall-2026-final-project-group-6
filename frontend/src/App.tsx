@@ -18,7 +18,7 @@ export function App() {
   async function checkConnection() {
     setStatus("Checking...");
     try {
-      const response = await fetch("http://localhost:3000/api/health/database");
+      const response = await fetch("/api/health/database");
       if (!response.ok) throw new Error("Connection failed");
       setStatus("Backend and database connected");
     } catch {

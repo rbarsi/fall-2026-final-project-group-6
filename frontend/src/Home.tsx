@@ -44,7 +44,7 @@ export function Home() {
 
     const handleSaveEdit = async (id: number) => {
         try {
-            const res  = await fetch(`http://localhost:3000/api/listings/${id}`, {
+            const res  = await fetch(`/api/listings/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(editForm),
@@ -62,7 +62,7 @@ export function Home() {
     const handleDelete = async (id: number) => {
         if (confirm('Are you SURE you want to PERMANENTLY DELETE this listing?')) {
             try {
-                const res = await fetch(`http://localhost:3000/api/listings/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('FAILED to delete');
                 setListings(listings.filter(item => item.id != id));
             } catch (err) {
@@ -74,7 +74,7 @@ export function Home() {
     useEffect(() => {
     async function fetchListings() {
         try {
-            const response = await fetch('http://localhost:3000/api/listings');
+            const response = await fetch('/api/listings');
             if (!response.ok) throw new Error('FAILED to fetch listings');
             const data = await response.json();
             setListings(data);

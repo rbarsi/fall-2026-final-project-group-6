@@ -1,12 +1,37 @@
 import { Router } from "express";
 import { db } from '../db/database.js';
-import { listenerCount } from "process";
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = Router();
 
-router.put('/:id', async (req, res) => {
+router.get("/", async (_req, res) => {
     try {
-        const id = parseInt(req.params.id);
+        const listings = await (db as any).selectFrom("listings").selectAll().execute();
+        res.json(listings);
+    } catch (err) {
+        res.status(500).json({ error: "FAILED to fetch listings" });
+    }
+});
+
+router.put('/:id', requireAuth, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id as string);
+        const userId = req.session.userId!
+
+        const existingListing = await (db as any)
+            .selectFrom('listings')
+            .selectAll()
+            .where('id', '=', id)
+            .executeTakeFirst();
+
+        if (!existingListing) {
+            return res.status(404).json({ error: 'Listing NOT found' });
+        }
+
+        if (existingListing.user_id != userId) {
+            return res.status(403).json({ error: 'FORBIDDEN. You can only edit your own listings!' });
+        }
+
         const { title, category, description, status } = req.body;
 
         const updateData: Record<string, any> ={};
@@ -27,9 +52,51 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
+    try {
+        const { title, description, category, status } = req.body;
+        const userId = req.session.userId!;
+
+        if (!title || !description || !category) {
+            return res.status(400).json({ error: "Title, description, and category are required. "});
+        }
+
+        const [newListing] = await (db as any)
+            .insertInto("listings")
+            .values({
+                title,
+                description,
+                category,
+                status: status || "lost",
+                user_id: userId,
+            })
+            .returningAll()
+            .execute();
+        res.status(201).json(newListing);
+    } catch (err) {
+        console.error("FAILED to create listing:", err);
+        res.status(500).json({ error: "FAILED to create listing" });
+    }
+});
+
+router.delete('/:id', requireAuth, async (req, res) => {
     try{
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id as string);
+        const userId = req.session.userId!;
+
+        const existingListing = await (db as any)
+            .selectFrom("listings")
+            .selectAll()
+            .where("id", "=", id)
+            .executeTakeFirst();
+        
+        if (!existingListing) {
+            return res.status(404).json({ error: "Listing NOT found" });
+        }
+
+        if (existingListing.user_id != userId) {
+            return res.status(403).json({ error: "FORBIDDEN: You can only delete your own posts!" });
+        }
 
         await (db as any).deleteFrom('listings')
             .where('id', '=', id as any)
@@ -39,67 +106,6 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         console.error('Failed to delete listing:', err);
         res.status(500).json({ error: 'Failed to delete listing' });
-    }
-});
-
-router.post('/', async (req, res) => {
-    try {
-    
-    //THE || 1 BYPASSES LOGIN
-
-       if (!req.session?.userId) {
-            if (process.env.NODE_ENV == 'test') {
-            return res.status(401).json({ error: 'ERROR. You are not signed in.'});
-            }
-        }
-    
-        let userId = req.session?.userId;
-        //req.session.userId
-
-        if (!userId) {
-            const firstUser = await (db as any)
-                .selectFrom('users')
-                .select('id')
-                .executeTakeFirst();
-        userId = firstUser ? firstUser.id : 1;
-        }
-
-        const { title, description, category, status } = req.body;
-/*
-        if (!req.session || !req.session.userId) {
-            return res.status(401).json({ error: 'UNAUTHORIZED' });
-        }
-        */
-        const newListing = await (db as any)
-        .insertInto('listings')
-        .values({
-            user_id: userId,
-            title,
-            description,
-            category,
-            status: status || 'lost',
-        })
-        .returningAll()
-        .executeTakeFirst();
-        
-        return res.status(201).json(newListing);
-    } catch (error) {
-        console.error('ERROR CREATING LISTING:', error);
-        return res.status(500).json({ error: 'INTERNAL SERVER ERROR'});
-    }
-});
-
-router.get('/', async (req, res) => {
-    try {
-        const listings = await (db as any)
-        .selectFrom('listings')
-        .selectAll()
-        .execute();
-
-    return res.json(listings);
-    } catch (error) {
-        console.error('ERROR WHEN FETCHING LISTINGS:', error);
-        return res.status(500).json({ error: 'INTERNAL SERVER ERROR'});
     }
 });
 

@@ -7,7 +7,7 @@ export default function Listings() {
 
     useEffect(() => {
         //fetch('/api/listings')
-        fetch('http://localhost:3000/api/listings')
+        fetch('/api/listings')
         .then((res) => res.json())
         .then((data) => {
             setListings(data);
