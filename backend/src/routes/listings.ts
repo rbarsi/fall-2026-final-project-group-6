@@ -47,10 +47,12 @@ router.post('/', async (req, res) => {
     
     //THE || 1 BYPASSES LOGIN
 
-    /*   if (!req.session) {
+       if (!req.session?.userId) {
+            if (process.env.NODE_ENV == 'test') {
             return res.status(401).json({ error: 'ERROR. You are not signed in.'});
+            }
         }
-    */
+    
         let userId = req.session?.userId;
         //req.session.userId
 
@@ -59,7 +61,6 @@ router.post('/', async (req, res) => {
                 .selectFrom('users')
                 .select('id')
                 .executeTakeFirst();
-
         userId = firstUser ? firstUser.id : 1;
         }
 
