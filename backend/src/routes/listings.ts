@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
     try {
     
     //THE || 1 BYPASSES LOGIN
-    
+
     /*   if (!req.session) {
             return res.status(401).json({ error: 'ERROR. You are not signed in.'});
         }
@@ -60,6 +60,10 @@ router.post('/', async (req, res) => {
 
         const { title, description, price, category } = req.body;
 
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ error: 'UNAUTHORIZED' });
+        }
+        
         const newListing = await (db as any)
         .insertInto('listings')
         .values({
