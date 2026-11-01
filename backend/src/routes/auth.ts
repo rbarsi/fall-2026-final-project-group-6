@@ -152,7 +152,7 @@ authRouter.post("/login", async (req, res) => {
     const user = result.rows[0];
 
     // 3. Check whether the user exists
-    if (!user.password_hash) {
+    if (!user || !user.password_hash) {
       res.status(401).json({
         message: "Invalid email or password"
       });

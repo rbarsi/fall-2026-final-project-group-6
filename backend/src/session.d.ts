@@ -1,4 +1,3 @@
-
 import "express-session";
 
 declare module "express-session" {
@@ -6,5 +5,3 @@ declare module "express-session" {
     userId?: number;
   }
 }
-
-export {};
