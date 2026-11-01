@@ -1,4 +1,9 @@
-
+//USer
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+};
 // SIGNUP
 export async function signup(
   name: string,
@@ -18,7 +23,11 @@ export async function signup(
     })
   });
 
-  return response.json();
+  const data = await response.json();
+  if(!response.ok){
+    throw new Error(data.error || data.message || "Signup failed");
+  }
+  return data;
 }
 
 // LOGIN
@@ -38,7 +47,11 @@ export async function login(
     })
   });
 
-  return response.json();
+  const data = await response.json();
+  if(!response.ok){
+    throw new Error(data.error || data.message || "Login Failed");
+  }
+  return data;
 }
 
 // LOGOUT
@@ -48,7 +61,11 @@ export async function logout() {
     credentials: "same-origin"
   });
 
-  return response.json();
+ const data = await response.json();
+  if(!response.ok){
+    throw new Error(data.error || data.message || "Logout Failed");
+  }
+  return data;
 }
 
 // CHECK CURRENT USER
@@ -57,9 +74,13 @@ export async function getCurrentUser() {
     credentials: "same-origin"
   });
 
-  if (!response.ok) {
+  if (response.status == 401) {
     return null;
   }
 
-  return response.json();
+  const data = await response.json();
+  if(!response.ok){
+    throw new Error(data.error || data.message || "Session check Failed");
+  }
+  return data.user ?? null;
 }

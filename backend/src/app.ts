@@ -5,11 +5,12 @@ import { db } from "./db/database.js";
 import { sessionMiddleware } from "./session.js";
 import { authRouter } from "./routes/auth.js";
 import { requireAuth } from "./middleware/requireAuth.js";
-
+import { profileRouter } from "./routes/profile.js";
 export const app = express();
 app.use(express.json());
 //new
 app.use(sessionMiddleware);
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -25,6 +26,8 @@ app.get("/api/health/database", async (_req, res) => {
 
 //new things added
 app.use("/api/auth", authRouter);
+app.use("/api/profile", profileRouter);
+
 app.post("/api/listings", requireAuth, (_req, res) => {
   res.json({
     message: "You are allowed to create a listing"
