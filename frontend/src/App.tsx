@@ -1,3 +1,4 @@
+import{AuthForms} from "./AuthForms";
 import { useState } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import ListingForm from './Components/listingForm';
@@ -33,6 +34,8 @@ export function App() {
       <p>Development setup..</p>
       <button onClick={() => void checkConnection()}>Check connection</button>
       <p role="status">{status}</p>
+    
+    <AuthForms/>
 
       <hr style={{ margin: '20px 0' }} />
 

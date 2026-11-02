@@ -60,3 +60,10 @@ npm test --workspace backend
 ```
 
 GitHub Actions runs backend TypeScript checks, migrations, tests, and the build on pushes and pull requests using a temporary Postgres database.
+
+## UI Mockups
+
+- [UI mockup PDF](docs/ui/Campus_Lost_and_Found_UI_Mockups.pdf)
+- [Editable Figma mockups](https://www.figma.com/design/j8zK1GFZyarZG81fkDPPL4)
+
+Uses “Campus Lost and Found” as the working product name.
