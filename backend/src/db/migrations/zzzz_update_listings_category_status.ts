@@ -3,8 +3,8 @@ import { Kysely } from "kysely";
 export async function up(db: Kysely<any>): Promise<void> {
     await db.schema
         .alterTable('listings')
-        .addColumn('category', 'varchar(255)', (col) => col.notNull())
-        .addColumn('status', 'varchar(50)', (col) => col.notNull().defaultTo('lost'))
+        .addColumn('category', 'varchar(255)', (col) => col.ifNotExists().notNull())
+        .addColumn('status', 'varchar(50)', (col) => col.ifNotExists().notNull().defaultTo('lost'))
         .execute();
 }
 
