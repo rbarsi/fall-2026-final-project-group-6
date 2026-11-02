@@ -1,12 +1,22 @@
 import express from "express";
 import { sql } from "kysely";
 import { db } from "./db/database.js";
+
 //new imports
 import { sessionMiddleware } from "./session.js";
 import { authRouter } from "./routes/auth.js";
+import cors from 'cors';
+import { router as listingsRouter} from './routes/listings.js'
+
 import { requireAuth } from "./middleware/requireAuth.js";
 import { profileRouter } from "./routes/profile.js";
 export const app = express();
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
 app.use(express.json());
 //new
 app.use(sessionMiddleware);
@@ -27,9 +37,4 @@ app.get("/api/health/database", async (_req, res) => {
 //new things added
 app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
-
-app.post("/api/listings", requireAuth, (_req, res) => {
-  res.json({
-    message: "You are allowed to create a listing"
-  });
-});
+app.use("/api/listings", listingsRouter);

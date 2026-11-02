@@ -17,9 +17,10 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('id', 'serial', (col) => col.primaryKey())
     .addColumn('title', 'varchar(255)', (col) => col.notNull())
     .addColumn('description', 'text', (col) => col.notNull())
-    .addColumn('price', 'numeric(10, 2)', (col) => col.notNull())
+    .addColumn('category', 'varchar(50)', (col) => col.notNull())
     .addColumn('user_id', 'integer', (col) => col.references('users.id').onDelete('cascade').notNull())
-    .addColumn('created_at', 'timestamp', (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()).execute();
+    .addColumn('created_at', 'timestamp', (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull())
+    .execute();
 
     // Comments table
     await db.schema
