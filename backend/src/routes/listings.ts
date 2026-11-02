@@ -16,7 +16,12 @@ router.get("/", async (_req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
     try {
         const id = parseInt(req.params.id as string);
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid listing ID format. Must be a number.' });
+        }
         const userId = req.session.userId!
+        const { title, category, description, status } = req.body;
 
         const existingListing = await (db as any)
             .selectFrom('listings')
@@ -32,14 +37,16 @@ router.put('/:id', requireAuth, async (req, res) => {
             return res.status(403).json({ error: 'FORBIDDEN. You can only edit your own listings!' });
         }
 
-        const { title, category, description, status } = req.body;
-
         const updateData: Record<string, any> ={};
         if (title != undefined) updateData.title = title;
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
         if (status != undefined) updateData.status = status;
-        
+
+        if (Object.keys(updateData).length == 0) {
+            return res.status(400).json({ error: 'No update fields provided.' });
+        }
+
         await (db as any).updateTable('listings')
             .set(updateData)
             .where('id', '=', id)
@@ -82,6 +89,11 @@ router.post("/", requireAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
     try{
         const id = parseInt(req.params.id as string);
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid listing ID format. Must be a number.' });
+        }
+
         const userId = req.session.userId!;
 
         const existingListing = await (db as any)
