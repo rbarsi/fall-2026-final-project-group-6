@@ -7,7 +7,8 @@ export default function ListingForm() {
         category: '',
         description: '',
         status: 'lost',
-        user_id: 1,
+        location: '',
+        listing_date: '',
     });
 
     const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function ListingForm() {
         setLoading(true);
 
         try {
-            const response = await fetch ('http://localhost:3000/api/listings', {
+            const response = await fetch ('/api/listings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
@@ -69,6 +70,24 @@ export default function ListingForm() {
                 placeholder="Electronics, ID, Card, Car Keys"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value})}
+                required
+            />
+
+            <label>Location</label>
+            <input
+                type="text"
+                placeholder="Where was it lost or found?"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                required
+            />
+
+            <label>Date</label>
+            <input
+                type="date"
+                value={formData.listing_date}
+                onChange={(e) => setFormData({ ...formData, listing_date: e.target.value })}
+                required
             />
 
             <label>Status</label>
@@ -79,7 +98,6 @@ export default function ListingForm() {
                 >
                     <option value="lost">Lost</option>
                     <option value="found">Found</option>
-                    <option value="Reunited">Reunited</option>
                 </select>
 
             <label>Description</label>
