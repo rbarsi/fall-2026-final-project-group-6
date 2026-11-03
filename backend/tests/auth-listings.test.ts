@@ -31,7 +31,8 @@ const testListing = {
   description: "Black bottle with stickers",
   category: "Water Bottles",
   status: "lost",
-  location: "Atkins Library",
+  // Set to the Atkins Library campus location in beforeAll
+  location_id: 0,
   listing_date: "2026-11-02"
 };
 
@@ -69,6 +70,14 @@ const sessionModule = await import("../src/session.js");
   pool = new pg.Pool({
     connectionString: testUrl
   });
+
+  // Campus locations come from a migration, so look up the test location's ID
+  const atkins = await pool.query(
+    "SELECT id FROM campus_locations WHERE name = $1",
+    ["Atkins Library"]
+  );
+
+  testListing.location_id = atkins.rows[0].id;
 });
 
 // Clean test data before every test
@@ -378,5 +387,128 @@ describe("Listings API", () => {
       });
 
     expect(response.status).toBe(400);
+  });
+});
+
+// CAMPUS LOCATION TESTS
+
+// Sign up and log in, returning an agent that keeps the session
+async function loginAs(user: typeof testUser) {
+  await request(app).post("/api/auth/signup").send(user);
+
+  const agent = request.agent(app);
+
+  await agent.post("/api/auth/login").send({
+    email: user.email,
+    password: user.password
+  });
+
+  return agent;
+}
+
+describe("Campus locations", () => {
+
+  it("lists campus locations with coordinates", async () => {
+    const response = await request(app).get("/api/locations");
+
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBeGreaterThan(0);
+
+    const atkins = response.body.find(
+      (location: { name: string }) => location.name === "Atkins Library"
+    );
+
+    expect(atkins.id).toBe(testListing.location_id);
+    expect(typeof atkins.latitude).toBe("number");
+    expect(typeof atkins.longitude).toBe("number");
+  });
+
+  it("saves the chosen location and its coordinates", async () => {
+    const agent = await loginAs(testUser);
+
+    const created = await agent.post("/api/listings").send(testListing);
+
+    expect(created.status).toBe(201);
+    expect(created.body.location_id).toBe(testListing.location_id);
+    expect(created.body.location).toBe("Atkins Library");
+    expect(typeof created.body.latitude).toBe("number");
+
+    // The location is still there when the listing is loaded again
+    const response = await request(app)
+      .get(`/api/listings/${created.body.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.location).toBe("Atkins Library");
+    expect(response.body.latitude).toBe(created.body.latitude);
+    expect(response.body.longitude).toBe(created.body.longitude);
+  });
+
+  it("rejects a location that does not exist", async () => {
+    const agent = await loginAs(testUser);
+
+    const unknown = await agent
+      .post("/api/listings")
+      .send({ ...testListing, location_id: 999999 });
+
+    expect(unknown.status).toBe(400);
+
+    const notANumber = await agent
+      .post("/api/listings")
+      .send({ ...testListing, location_id: "abc" });
+
+    expect(notANumber.status).toBe(400);
+  });
+
+  it("lets the owner change the location", async () => {
+    const agent = await loginAs(testUser);
+
+    const created = await agent.post("/api/listings").send(testListing);
+
+    const locations = await request(app).get("/api/locations");
+    const other = locations.body.find(
+      (location: { id: number }) => location.id !== testListing.location_id
+    );
+
+    const update = await agent
+      .put(`/api/listings/${created.body.id}`)
+      .send({ location_id: other.id });
+
+    expect(update.status).toBe(200);
+
+    const response = await request(app)
+      .get(`/api/listings/${created.body.id}`);
+
+    expect(response.body.location_id).toBe(other.id);
+    expect(response.body.location).toBe(other.name);
+    expect(response.body.latitude).toBe(other.latitude);
+  });
+
+  it("rejects changing to an invalid location", async () => {
+    const agent = await loginAs(testUser);
+
+    const created = await agent.post("/api/listings").send(testListing);
+
+    const response = await agent
+      .put(`/api/listings/${created.body.id}`)
+      .send({ location_id: 999999 });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("does not let another user change the location", async () => {
+    const owner = await loginAs(testUser);
+    const created = await owner.post("/api/listings").send(testListing);
+
+    const stranger = await loginAs({
+      name: "Other Student",
+      email: "otherstudent@example.com",
+      password: "password123"
+    });
+
+    const response = await stranger
+      .put(`/api/listings/${created.body.id}`)
+      .send({ location_id: testListing.location_id });
+
+    expect(response.status).toBe(403);
   });
 });
