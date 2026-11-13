@@ -512,3 +512,121 @@ describe("Campus locations", () => {
     expect(response.status).toBe(403);
   });
 });
+
+// KEYWORD SEARCH TESTS
+
+// Post the three listings the search tests look for
+async function createSearchListings() {
+  const agent = await loginAs(testUser);
+
+  // "bottle" is in the title
+  await agent.post("/api/listings").send(testListing);
+
+  // "bottle" is only in the description
+  await agent.post("/api/listings").send({
+    ...testListing,
+    title: "Blue Backpack",
+    description: "Has a water bottle in the side pocket",
+    category: "Bags"
+  });
+
+  // No "bottle" at all
+  await agent.post("/api/listings").send({
+    ...testListing,
+    title: "Car Keys",
+    description: "Toyota key on a red lanyard",
+    category: "Keys",
+    status: "found"
+  });
+}
+
+function titlesOf(response: { body: { title: string }[] }) {
+  return response.body.map((listing) => listing.title);
+}
+
+describe("Keyword search", () => {
+
+  it("finds listings by words in the title or description", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "bottle" });
+
+    expect(response.status).toBe(200);
+    expect(titlesOf(response)).toHaveLength(2);
+    expect(titlesOf(response)).toContain("Lost Water Bottle");
+    expect(titlesOf(response)).toContain("Blue Backpack");
+  });
+
+  it("ranks title matches above description matches", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "bottle" });
+
+    expect(titlesOf(response)).toEqual(["Lost Water Bottle", "Blue Backpack"]);
+  });
+
+  it("matches other forms of a word", async () => {
+    await createSearchListings();
+
+    // "keys" should find "key" and "Keys"
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "keys" });
+
+    expect(titlesOf(response)).toEqual(["Car Keys"]);
+  });
+
+  it("returns an empty list when nothing matches", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "umbrella" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("returns every listing when the search is empty", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "   " });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(3);
+  });
+
+  it("handles unusual search text without errors", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "\"water & | ! ( bottle" });
+
+    expect(response.status).toBe(200);
+  });
+
+  it("rejects searches that are too long", async () => {
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "a".repeat(201) });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("does not include the search column in responses", async () => {
+    await createSearchListings();
+
+    const response = await request(app)
+      .get("/api/listings")
+      .query({ q: "bottle" });
+
+    expect(response.body[0].search_vector).toBeUndefined();
+  });
+});
