@@ -12,6 +12,7 @@ import { requireAuth } from "./middleware/requireAuth.js";
 import { profileRouter } from "./routes/profile.js";
 export const app = express();
 
+
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
