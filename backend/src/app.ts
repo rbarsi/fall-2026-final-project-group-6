@@ -7,6 +7,7 @@ import { sessionMiddleware } from "./session.js";
 import { authRouter } from "./routes/auth.js";
 import cors from 'cors';
 import { router as listingsRouter} from './routes/listings.js'
+import { router as locationsRouter } from './routes/locations.js'
 
 import { requireAuth } from "./middleware/requireAuth.js";
 import { profileRouter } from "./routes/profile.js";
@@ -38,3 +39,4 @@ app.get("/api/health/database", async (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/listings", listingsRouter);
+app.use("/api/locations", locationsRouter);

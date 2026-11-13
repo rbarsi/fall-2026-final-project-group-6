@@ -1,12 +1,22 @@
 import { Router } from "express";
 import { db } from '../db/database.js';
 import { requireAuth } from "../middleware/requireAuth.js";
+import { findCampusLocation } from "./locations.js";
 
 const router = Router();
 
+// Listings with the coordinates of their campus location (null for older listings)
+function selectListingsWithCoordinates() {
+    return (db as any)
+        .selectFrom("listings")
+        .leftJoin("campus_locations", "campus_locations.id", "listings.location_id")
+        .selectAll("listings")
+        .select(["campus_locations.latitude", "campus_locations.longitude"]);
+}
+
 router.get("/", async (_req, res) => {
     try {
-        const listings = await (db as any).selectFrom("listings").selectAll().execute();
+        const listings = await selectListingsWithCoordinates().execute();
         res.json(listings);
     } catch (err) {
         res.status(500).json({ error: "FAILED to fetch listings" });
@@ -30,10 +40,8 @@ router.get("/:id", async (req, res) => {
         }
 
         // Find the listing
-        const listing = await (db as any)
-            .selectFrom("listings")
-            .selectAll()
-            .where("id", "=", id)
+        const listing = await selectListingsWithCoordinates()
+            .where("listings.id", "=", id)
             .executeTakeFirst();
 
         // Listing doesn't exist
@@ -64,7 +72,7 @@ router.put('/:id', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Invalid listing ID format. Must be a number.' });
         }
         const userId = req.session.userId!
-        const { title, category, description, status } = req.body;
+        const { title, category, description, status, location_id } = req.body;
 
         const existingListing = await (db as any)
             .selectFrom('listings')
@@ -85,6 +93,18 @@ router.put('/:id', requireAuth, async (req, res) => {
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
         if (status != undefined) updateData.status = status;
+
+        // Change to another campus location
+        if (location_id != undefined) {
+            const campusLocation = await findCampusLocation(location_id);
+
+            if (!campusLocation) {
+                return res.status(400).json({ error: 'Please choose a valid campus location.' });
+            }
+
+            updateData.location_id = campusLocation.id;
+            updateData.location = campusLocation.name;
+        }
 
         if (Object.keys(updateData).length == 0) {
             return res.status(400).json({ error: 'No update fields provided.' });
@@ -111,7 +131,7 @@ router.post("/", requireAuth, async (req, res) => {
             description,
             category,
             status,
-            location,
+            location_id,
             listing_date
         } = req.body;
 
@@ -124,17 +144,16 @@ router.post("/", requireAuth, async (req, res) => {
             typeof description !== "string" ||
             typeof category !== "string" ||
             typeof status !== "string" ||
-            typeof location !== "string" ||
             typeof listing_date !== "string" ||
+            location_id == undefined ||
             !title.trim() ||
             !description.trim() ||
             !category.trim() ||
             !status.trim() ||
-            !location.trim() ||
             !listing_date.trim()
         ) {
             return res.status(400).json({
-                error: "Title, description, category, status, location, and date are required."
+                error: "Title, description, category, status, location_id, and date are required."
             });
         }
 
@@ -142,8 +161,7 @@ router.post("/", requireAuth, async (req, res) => {
         if (
             title.trim().length > 255 ||
             description.trim().length > 5000 ||
-            category.trim().length > 50 ||
-            location.trim().length > 255
+            category.trim().length > 50
         ) {
             return res.status(400).json({
                 error: "One or more fields are too long."
@@ -179,6 +197,15 @@ router.post("/", requireAuth, async (req, res) => {
             });
         }
 
+        // Make sure the location is one of the campus locations
+        const campusLocation = await findCampusLocation(location_id);
+
+        if (!campusLocation) {
+            return res.status(400).json({
+                error: "Please choose a valid campus location."
+            });
+        }
+
         // Make sure the user is logged in
         if (!userId) {
             return res.status(401).json({
@@ -194,15 +221,20 @@ router.post("/", requireAuth, async (req, res) => {
                 description: description.trim(),
                 category: category.trim(),
                 status: cleanStatus,
-                location: location.trim(),
+                location: campusLocation.name,
+                location_id: campusLocation.id,
                 listing_date: listing_date,
                 user_id: userId
             })
             .returningAll()
             .execute();
 
-        // Return the newly created listing
-        return res.status(201).json(newListing);
+        // Return the newly created listing with its coordinates
+        return res.status(201).json({
+            ...newListing,
+            latitude: campusLocation.latitude,
+            longitude: campusLocation.longitude
+        });
 
     } catch (err) {
         console.error("FAILED to create listing:", err);

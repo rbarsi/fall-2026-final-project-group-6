@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { fetchLocations, type CampusLocation } from './locations';
 
 interface Listing {
     id: number;
@@ -7,6 +8,8 @@ interface Listing {
     category: string;
     description: string;
     status: 'lost' | 'found' | 'reunited';
+    location: string | null;
+    location_id: number | null;
     created_at: string;
 }
 
@@ -14,6 +17,7 @@ export function Home() {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
+    const [locations, setLocations] = useState<CampusLocation[]>([]);
 
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState ({
@@ -21,6 +25,7 @@ export function Home() {
         category: '',
         description: '',
         status: 'lost' as 'lost' | 'found' | 'reunited',
+        location_id: '',
     });
 
     const getStatusStyle = (status: string): React.CSSProperties => {
@@ -39,20 +44,29 @@ export function Home() {
             category: item.category,
             description: item.description,
             status: item.status,
+            location_id: item.location_id ? String(item.location_id) : '',
         });
     };
 
     const handleSaveEdit = async (id: number) => {
+        // Older listings may not have a campus location yet, so only send one if chosen
+        const { location_id, ...fields } = editForm;
+        const chosenLocation = locations.find(location => String(location.id) == location_id);
+
         try {
             const res  = await fetch(`/api/listings/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify(chosenLocation ? { ...fields, location_id: chosenLocation.id } : fields),
             });
-            
+
             if (!res.ok) throw new Error('Failed to update');
 
-            setListings(listings.map(item => item.id == id? { ...item, ...editForm } : item ));
+            setListings(listings.map(item => item.id == id ? {
+                ...item,
+                ...fields,
+                ...(chosenLocation ? { location_id: chosenLocation.id, location: chosenLocation.name } : {}),
+            } : item ));
             setEditingId(null);
         } catch (err) {
             alert('Could not update listing.');
@@ -86,6 +100,11 @@ export function Home() {
        }
 
       fetchListings();
+
+      // Campus locations for the edit form's dropdown
+      fetchLocations()
+        .then(setLocations)
+        .catch(() => setLocations([]));
 
     }, []);
 
@@ -122,6 +141,18 @@ export function Home() {
                                 onChange={e => setEditForm({ ...editForm, category: e.target.value })}
                                 style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
                             />
+
+                            <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Location</label>
+                            <select
+                                value={editForm.location_id}
+                                onChange={e => setEditForm({ ...editForm, location_id: e.target.value })}
+                                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+                            >
+                                <option value="">{item.location_id ? 'Choose a campus location' : (item.location || 'Choose a campus location')}</option>
+                                {locations.map(location => (
+                                    <option key={location.id} value={location.id}>{location.name}</option>
+                                ))}
+                            </select>
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Status</label>
                             <select
@@ -164,6 +195,9 @@ export function Home() {
                 </div>
                             
                     <h4 style={{ margin: '8px 0 4px 0' }}>{item.title}</h4>
+                    {item.location && (
+                        <p style={{ color: '#555', fontSize: '13px', margin: '0 0 6px 0' }}>Location: {item.location}</p>
+                    )}
                     <p style={{ color: '#667', margin: '0 0 10px 0' }}>{item.description}</p>
 
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '12px' }}>
