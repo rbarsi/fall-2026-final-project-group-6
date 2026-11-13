@@ -16,7 +16,7 @@ This project is a student-built prototype and is not an official UNC Charlotte s
 
 - Sign up, log in, and log out (passwords are hashed; sessions are stored in Postgres)
 - View, edit, and delete your own account
-- Post lost or found items with a category, location, and date
+- Post lost or found items with a category, campus location, and date
 - Browse all listings or view a single listing
 - Edit or delete your own listings (other users cannot change them)
 
@@ -70,8 +70,11 @@ Stop the database with `docker compose stop`. This preserves local data. Keep `.
 | GET | `/api/listings`, `/api/listings/:id` | No |
 | POST | `/api/listings` | Yes |
 | PUT / DELETE | `/api/listings/:id` | Yes (owner only) |
+| GET | `/api/locations` | No |
 
-Creating a listing requires `title`, `description`, `category`, `status` (`lost` or `found`), `location`, and `listing_date` (`YYYY-MM-DD`).
+Creating a listing requires `title`, `description`, `category`, `status` (`lost` or `found`), `location_id`, and `listing_date` (`YYYY-MM-DD`).
+
+`location_id` must be one of the campus locations from `/api/locations`. Listings include the location's name in `location` and its `latitude` and `longitude` (these are `null` for listings created before campus locations were added).
 
 `/api/health` checks Express; `/api/health/database` checks Postgres.
 

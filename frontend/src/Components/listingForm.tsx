@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchLocations, type CampusLocation } from '../locations';
 
 export default function ListingForm() {
     const [formData, setFormData] = useState ({
@@ -7,7 +8,7 @@ export default function ListingForm() {
         category: '',
         description: '',
         status: 'lost',
-        location: '',
+        location_id: '',
         listing_date: '',
     });
 
@@ -15,6 +16,14 @@ export default function ListingForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [locations, setLocations] = useState<CampusLocation[]>([]);
+
+    // Load the campus locations for the dropdown
+    useEffect(() => {
+        fetchLocations()
+            .then(setLocations)
+            .catch((err) => setError(err.message));
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,13 +83,17 @@ export default function ListingForm() {
             />
 
             <label>Location</label>
-            <input
-                type="text"
-                placeholder="Where was it lost or found?"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            <select
+                value={formData.location_id}
+                onChange={(e) => setFormData({ ...formData, location_id: e.target.value })}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc'}}
                 required
-            />
+                >
+                    <option value="">Where was it lost or found?</option>
+                    {locations.map((location) => (
+                        <option key={location.id} value={location.id}>{location.name}</option>
+                    ))}
+                </select>
 
             <label>Date</label>
             <input
