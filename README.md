@@ -18,6 +18,7 @@ This project is a student-built prototype and is not an official UNC Charlotte s
 - View, edit, and delete your own account
 - Post lost or found items with a category, campus location, and date
 - Browse all listings or view a single listing
+- Search listing titles and descriptions by keyword, with the best matches first
 - Edit or delete your own listings (other users cannot change them)
 
 ## Local development
@@ -75,6 +76,10 @@ Stop the database with `docker compose stop`. This preserves local data. Keep `.
 Creating a listing requires `title`, `description`, `category`, `status` (`lost` or `found`), `location_id`, and `listing_date` (`YYYY-MM-DD`).
 
 `location_id` must be one of the campus locations from `/api/locations`. Listings include the location's name in `location` and its `latitude` and `longitude` (these are `null` for listings created before campus locations were added).
+
+### Search
+
+`GET /api/listings?q=water bottle` returns only listings whose title or description match, best matches first. It uses Postgres full-text search: a `search_vector` column (kept up to date by Postgres) with a GIN index. Words in the title count more than words in the description, and different forms of a word match (`keys` finds `key`). Users can type phrases in quotes, `or`, and `-word` to exclude a word. Without `q`, all listings are returned. Searches longer than 200 characters return 400.
 
 `/api/health` checks Express; `/api/health/database` checks Postgres.
 

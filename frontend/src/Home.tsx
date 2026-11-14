@@ -18,6 +18,8 @@ export function Home() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
     const [locations, setLocations] = useState<CampusLocation[]>([]);
+    const [searchText, setSearchText] = useState('');
+    const [activeSearch, setActiveSearch] = useState('');
 
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState ({
@@ -85,21 +87,37 @@ export function Home() {
         }
     };
     
-    useEffect(() => {
-    async function fetchListings() {
+    // Load all listings, or only the ones matching a keyword search
+    async function fetchListings(search: string) {
+        setLoading(true);
+        setError('');
+
         try {
-            const response = await fetch('/api/listings');
-            if (!response.ok) throw new Error('FAILED to fetch listings');
+            const url = search ? `/api/listings?q=${encodeURIComponent(search)}` : '/api/listings';
+            const response = await fetch(url);
             const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'FAILED to fetch listings');
             setListings(data);
+            setActiveSearch(search);
         } catch (err: any) {
             setError(err.message || 'Could not load listings');
         } finally {
             setLoading(false);
         }
-       }
+    }
 
-      fetchListings();
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        void fetchListings(searchText.trim());
+    };
+
+    const handleClearSearch = () => {
+        setSearchText('');
+        void fetchListings('');
+    };
+
+    useEffect(() => {
+      fetchListings('');
 
       // Campus locations for the edit form's dropdown
       fetchLocations()
@@ -112,13 +130,34 @@ export function Home() {
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
 
 
-        <h3>Recent listings...</h3>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <input
+                type="search"
+                placeholder="Search titles and descriptions, e.g. water bottle"
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                maxLength={200}
+                style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            />
+            <button type="submit" style={{ background: '#0a4b32', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}>
+                Search
+            </button>
+            {activeSearch && (
+                <button type="button" onClick={handleClearSearch} style={{ background: 'none', border: '1px solid #ccc', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}>
+                    Clear
+                </button>
+            )}
+        </form>
+
+        <h3>{activeSearch ? `Results for "${activeSearch}"` : 'Recent listings...'}</h3>
 
         {loading && <p>Loading items...</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
         {!loading && !error && listings.length == 0 && (
-            <p>No lost or fond items posted yet. Be the first to post!</p>
+            activeSearch
+                ? <p>No listings match "{activeSearch}". Try different words.</p>
+                : <p>No lost or fond items posted yet. Be the first to post!</p>
         )}
 
         <div style={{ display: 'grid', gap: '15px' }}>
