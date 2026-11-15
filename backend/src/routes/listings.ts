@@ -64,6 +64,22 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Allows My Listings to only show user created listings
+router.get("/user/mine", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        const listings = await selectListingsWithCoordinates()
+            .where("listings.user_id", "=", userId)
+            .execute();
+        
+        res.json(listings);
+    } catch (err) {
+        console.error("Failed to fetch user listings:", err);
+        res.status(500).json({ error: "FAILED to fetch your listings." });
+    }
+});
+
 router.put('/:id', requireAuth, async (req, res) => {
     try {
         const id = parseInt(req.params.id as string);
@@ -92,7 +108,15 @@ router.put('/:id', requireAuth, async (req, res) => {
         if (title != undefined) updateData.title = title;
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
-        if (status != undefined) updateData.status = status;
+        if (status != undefined) {
+            updateData.status = status;
+
+            if (status == 'reunited' && existingListing.status != 'reunited') {
+                updateData.reunited_on = new Date().toISOString().slice(0, 10);
+            } else if (status != 'reunited') {
+                updateData.reunited_on = null;
+            }
+        }
 
         // Change to another campus location
         if (location_id != undefined) {
@@ -132,7 +156,7 @@ router.post("/", requireAuth, async (req, res) => {
             category,
             status,
             location_id,
-            listing_date
+            listing_date,
         } = req.body;
 
         // Get the logged-in user's ID
