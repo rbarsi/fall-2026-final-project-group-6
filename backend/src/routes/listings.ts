@@ -96,6 +96,28 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Allows My Listings to only show user created listings
+router.get("/user/mine", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        const listings = await selectListingsWithCoordinates()
+            .where("listings.user_id", "=", userId)
+            .execute();
+
+    //withoutSearchVector
+        const sanitizedListings = listings.map((item: any) => {
+            const { search_vector, ...listing } = item;
+            return listing;
+        });
+
+        res.json(sanitizedListings);
+    } catch (err) {
+        console.error("Failed to fetch user listings:", err);
+        res.status(500).json({ error: "FAILED to fetch your listings." });
+    }
+});
+
 router.put('/:id', requireAuth, async (req, res) => {
     try {
         const id = parseInt(req.params.id as string);
@@ -124,7 +146,23 @@ router.put('/:id', requireAuth, async (req, res) => {
         if (title != undefined) updateData.title = title;
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
-        if (status != undefined) updateData.status = status;
+        if (status != undefined) {
+            const cleanStatus = typeof status == 'string' ? status.trim().toLowerCase() : '';
+            if (cleanStatus != 'lost' && cleanStatus != 'found' && cleanStatus != 'reunited') {
+                return res.status(400).json({ error: 'Status must be lost, found OR reunited.' });
+            }
+            updateData.status = cleanStatus;
+
+            if (status == 'reunited' && existingListing.status != 'reunited') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                updateData.reunited_on = `${year}-${month}-${day}`;
+            } else if (cleanStatus != 'reunited') {
+                updateData.reunited_on = null;
+            }
+        }
 
         // Change to another campus location
         if (location_id != undefined) {
@@ -164,7 +202,7 @@ router.post("/", requireAuth, async (req, res) => {
             category,
             status,
             location_id,
-            listing_date
+            listing_date,
         } = req.body;
 
         // Get the logged-in user's ID

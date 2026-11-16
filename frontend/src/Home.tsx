@@ -11,6 +11,7 @@ interface Listing {
     location: string | null;
     location_id: number | null;
     created_at: string;
+    reunited_on: string | null;
 }
 
 export function Home() {
@@ -67,6 +68,7 @@ export function Home() {
             setListings(listings.map(item => item.id == id ? {
                 ...item,
                 ...fields,
+                reunited_on: fields.status == 'reunited' ? (item.reunited_on || new Date().toISOString().slice(0, 10)) : null,
                 ...(chosenLocation ? { location_id: chosenLocation.id, location: chosenLocation.name } : {}),
             } : item ));
             setEditingId(null);
@@ -194,6 +196,7 @@ export function Home() {
                             </select>
 
                             <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Status</label>
+                           
                             <select
                                 value={editForm.status}
                                 onChange={e => setEditForm({ ...editForm, status: e.target.value as any })}
@@ -225,8 +228,16 @@ export function Home() {
                     ) : (
                         <>
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', ...getStatusStyle(item.status) }}>
-                                {item.status || 'lost'}
+                            <span style={{ fontSize: '12px', padding: '3px, 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', ...getStatusStyle(item.status) }}>
+                                {(() => {
+                                    if (item.status == 'reunited' && item.reunited_on) {
+                                        return `REUNITED ON: ${new Date(item.reunited_on).toLocaleDateString('en-US')}`;
+                                    } else if (item.status == 'reunited') {
+                                        return 'REUNITED';
+                                    } else {
+                                        return item.status || 'lost';
+                                    }
+                                })()}
                             </span>
                         <span style={{ fontSize: '12px', background: '#eef2f0', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
                             {item.category}

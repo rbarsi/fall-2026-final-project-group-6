@@ -511,6 +511,34 @@ describe("Campus locations", () => {
 
     expect(response.status).toBe(403);
   });
+
+  //Testing delete permisions
+  describe("DELETE /api/listings/:id permissions", () => {
+    it ("SHOULD FORBID user from deleting someone else's listing", async () => {
+      const owner = await loginAs(testUser);
+      const created = await owner.post("/api/listings").send(testListing);
+      
+      const stranger = await loginAs({
+        name: "Second Student",
+        email: "SecondStudent@gmail.com",
+        password: "password897"
+      });
+
+      const response = await stranger.delete(`/api/listings/${created.body.id}`);
+
+      expect(response.status).toBe(403);
+    });
+
+    it ("SHOULD SUCCESSFULLY delete  auser's OWN listing", async () => {
+      const owner = await loginAs(testUser);
+      const created = await owner.post("/api/listings").send(testListing);
+
+      const response = await owner.delete(`/api/listings/${created.body.id}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+  });
 });
 
 // KEYWORD SEARCH TESTS
