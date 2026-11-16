@@ -14,6 +14,11 @@ interface Listing {
     reunited_on: string | null;
 }
 
+function formatReunitedOnDate(value: string) {
+    const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+    return new Date(year, month -1, day).toLocaleDateString('en-US');
+}
+
 export function Home() {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -65,10 +70,13 @@ export function Home() {
 
             if (!res.ok) throw new Error('Failed to update');
 
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
             setListings(listings.map(item => item.id == id ? {
                 ...item,
                 ...fields,
-                reunited_on: fields.status == 'reunited' ? (item.reunited_on || new Date().toISOString().slice(0, 10)) : null,
+                reunited_on: fields.status == 'reunited' ? (item.reunited_on || today) : null,
                 ...(chosenLocation ? { location_id: chosenLocation.id, location: chosenLocation.name } : {}),
             } : item ));
             setEditingId(null);
@@ -228,10 +236,10 @@ export function Home() {
                     ) : (
                         <>
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '12px', padding: '3px, 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', ...getStatusStyle(item.status) }}>
+                            <span style={{ fontSize: '12px', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase', ...getStatusStyle(item.status) }}>
                                 {(() => {
                                     if (item.status == 'reunited' && item.reunited_on) {
-                                        return `REUNITED ON: ${new Date(item.reunited_on).toLocaleDateString('en-US')}`;
+                                        return `REUNITED ON: ${formatReunitedOnDate(item.reunited_on)}`;
                                     } else if (item.status == 'reunited') {
                                         return 'REUNITED';
                                     } else {
