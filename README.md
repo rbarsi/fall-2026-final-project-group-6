@@ -19,7 +19,10 @@ This project is a student-built prototype and is not an official UNC Charlotte s
 - Post lost or found items with a category, campus location, and date
 - Browse all listings or view a single listing
 - Search listing titles and descriptions by keyword, with the best matches first
-- Edit or delete your own listings (other users cannot change them)
+- Filter listings by lost or found, category, location, and date range on the **Search Listings** page
+- See, edit, and delete your own listings on the **My Listings** page (other users cannot change them)
+- Mark a listing as reunited; it shows the date it was reunited
+- Comment on listings, and edit or delete your own comments (API only for now)
 
 ## Local development
 
@@ -50,7 +53,9 @@ Run `npm run db:migrate --workspace backend` again whenever you pull new migrati
 
 Migrations run in alphabetical order of their file names. Never edit or rename a migration after it is merged; add a new one instead.
 
-If creating a listing fails with an error about the `price` column, your local database is from an older version. Reset it once (this erases local data):
+Older local databases may still have a `price` column; the `zzzzzzzz_remove_listing_price` migration removes it.
+
+If `db:migrate` fails because of corrupted or out-of-order migrations (for example, you ran a migration from a branch before another migration was merged into `main`), reset your local database once (this erases local data):
 
 ```bash
 docker compose down -v
@@ -69,17 +74,29 @@ Stop the database with `docker compose stop`. This preserves local data. Keep `.
 | GET | `/api/auth/me` | Yes |
 | GET / PUT / DELETE | `/api/profile` | Yes (your own account) |
 | GET | `/api/listings`, `/api/listings/:id` | No |
+| GET | `/api/listings/user/mine` | Yes (your own listings) |
 | POST | `/api/listings` | Yes |
 | PUT / DELETE | `/api/listings/:id` | Yes (owner only) |
 | GET | `/api/locations` | No |
+| GET | `/api/comments/listing/:listingId` | No |
+| POST | `/api/comments` | Yes |
+| PUT / DELETE | `/api/comments/:id` | Yes (author only) |
+| GET | `/api/users/:id` | No (returns only `id` and `username`) |
+| PUT | `/api/users/:id` | Yes (your own account) |
 
 Creating a listing requires `title`, `description`, `category`, `status` (`lost` or `found`), `location_id`, and `listing_date` (`YYYY-MM-DD`).
+
+When editing a listing, `status` can be `lost`, `found`, or `reunited`. Changing it to `reunited` records today's date in `reunited_on`; changing it back clears it.
+
+Creating a comment requires `content` (up to 2,000 characters) and `listing_id`. The author is always the logged-in user.
 
 `location_id` must be one of the campus locations from `/api/locations`. Listings include the location's name in `location` and its `latitude` and `longitude` (these are `null` for listings created before campus locations were added).
 
 ### Search
 
 `GET /api/listings?q=water bottle` returns only listings whose title or description match, best matches first. It uses Postgres full-text search: a `search_vector` column (kept up to date by Postgres) with a GIN index. Words in the title count more than words in the description, and different forms of a word match (`keys` finds `key`). Users can type phrases in quotes, `or`, and `-word` to exclude a word. Without `q`, all listings are returned. Searches longer than 200 characters return 400.
+
+The **Search Listings** page (`/search`) loads all listings and filters them in the browser by text, lost or found, category, location, and date range.
 
 `/api/health` checks Express; `/api/health/database` checks Postgres.
 
