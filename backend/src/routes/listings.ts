@@ -72,8 +72,14 @@ router.get("/user/mine", requireAuth, async (req, res) => {
         const listings = await selectListingsWithCoordinates()
             .where("listings.user_id", "=", userId)
             .execute();
-        
-        res.json(listings);
+
+    //withoutSearchVector
+        const sanitizedListings = listings.map((item: any) => {
+            const { search_vector, ...listing } = item;
+            return listing;
+        });
+
+        res.json(sanitizedListings);
     } catch (err) {
         console.error("Failed to fetch user listings:", err);
         res.status(500).json({ error: "FAILED to fetch your listings." });
@@ -109,10 +115,18 @@ router.put('/:id', requireAuth, async (req, res) => {
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
         if (status != undefined) {
-            updateData.status = status;
+            const cleanStatus = typeof status == 'string' ? status.trim().toLowerCase() : '';
+            if (cleanStatus != 'lost' && cleanStatus != 'found' && cleanStatus != 'reunited') {
+                return res.status(400).json({ error: 'Status must be lost, found OR reunited.' });
+            }
+            updateData.status = cleanStatus;
 
             if (status == 'reunited' && existingListing.status != 'reunited') {
-                updateData.reunited_on = new Date().toISOString().slice(0, 10);
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                updateData.reunited_on = `${year}-${month}-${day}`;
             } else if (status != 'reunited') {
                 updateData.reunited_on = null;
             }
