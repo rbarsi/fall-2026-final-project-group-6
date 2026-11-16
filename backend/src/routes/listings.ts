@@ -127,7 +127,7 @@ router.put('/:id', requireAuth, async (req, res) => {
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 updateData.reunited_on = `${year}-${month}-${day}`;
-            } else if (status != 'reunited') {
+            } else if (cleanStatus != 'reunited') {
                 updateData.reunited_on = null;
             }
         }
