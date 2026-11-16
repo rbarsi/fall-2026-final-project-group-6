@@ -4,6 +4,7 @@ import { Routes, Route, Link, useLocation } from "react-router-dom";
 import ListingForm from './Components/listingForm';
 import Listings from '../src/listings';
 import { Home } from './Home';
+import { ListingSearch } from "./ListingSearch";
 import { MyListings } from './MyListings';
 
 
@@ -46,14 +47,17 @@ export function App() {
                 <Link to="/" style={getLinkStyle('/')}>Browse</Link>
                 <Link to="/my-listings" style={getLinkStyle('/my-listings')}>My Listings</Link>
                 <Link to="/create"style={{ background: '#0a4b32', color: '#fff', padding: '8px 16px', borderRadius: '6px', textDecoration: 'none' }}>+ Post an Item!</Link>
+                <Link to="/search" style={getLinkStyle("/search")}> Search Listings</Link>
             </nav>
         </header>
 
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<ListingForm />} />
+        <Route path="/search" element={<ListingSearch />} />
         <Route path="my-listings" element={<MyListings />}/>
       </Routes>
+      
     </main>
   );
 }

@@ -1,3 +1,52 @@
 body { margin: 0; font-family: system-ui, sans-serif; background: #f5f6f7; color: #172d25; }
 main { max-width: 48rem; margin: 4rem auto; padding: 1.5rem; }
 button { padding: .75rem 1rem; border: 0; border-radius: .4rem; background: #005035; color: white; font: inherit; cursor: pointer; }
+
+.listing-search {
+  width: 100%;
+  max-width: 1000px;
+  margin: 2rem auto;
+}
+
+.listing-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.listing-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.listing-filters input,
+.listing-filters select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.listing-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.listing-card {
+  padding: 1.25rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.listing-card h3 {
+  color: #005035;
+  margin-top: 0;
+}
