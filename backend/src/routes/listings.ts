@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { sql } from "kysely";
 import { db } from '../db/database.js';
 import { requireAuth } from "../middleware/requireAuth.js";
 import { findCampusLocation } from "./locations.js";
@@ -14,11 +15,42 @@ function selectListingsWithCoordinates() {
         .select(["campus_locations.latitude", "campus_locations.longitude"]);
 }
 
-router.get("/", async (_req, res) => {
+// The search column is only used for searching, so leave it out of responses
+function withoutSearchVector({ search_vector, ...listing }: any) {
+    return listing;
+}
+
+router.get("/", async (req, res) => {
     try {
-        const listings = await selectListingsWithCoordinates().execute();
-        res.json(listings);
+        const { q } = req.query;
+
+        // Optional keyword search, e.g. /api/listings?q=water bottle
+        if (q != undefined && typeof q !== "string") {
+            return res.status(400).json({ error: "Search must be a single text value." });
+        }
+
+        const search = (q ?? "").trim();
+
+        if (search.length > 200) {
+            return res.status(400).json({ error: "Search is too long." });
+        }
+
+        let query = selectListingsWithCoordinates();
+
+        if (search) {
+            // websearch_to_tsquery accepts anything a user types (quotes, "or", -word) without errors
+            const searchQuery = sql`websearch_to_tsquery('english', ${search})`;
+
+            query = query
+                .where(sql`listings.search_vector @@ ${searchQuery}`)
+                .orderBy(sql`ts_rank(listings.search_vector, ${searchQuery}) desc`)
+                .orderBy("listings.created_at", "desc");
+        }
+
+        const listings = await query.execute();
+        res.json(listings.map(withoutSearchVector));
     } catch (err) {
+        console.error("FAILED to fetch listings:", err);
         res.status(500).json({ error: "FAILED to fetch listings" });
     }
 });
@@ -53,7 +85,7 @@ router.get("/:id", async (req, res) => {
         }
 
         // Return the listing
-        res.status(200).json(listing);
+        res.status(200).json(withoutSearchVector(listing));
 
     } catch (err) {
         console.error("Failed to retrieve listing:", err);
@@ -61,6 +93,28 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({
             error: "Failed to retrieve listing"
         });
+    }
+});
+
+// Allows My Listings to only show user created listings
+router.get("/user/mine", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        const listings = await selectListingsWithCoordinates()
+            .where("listings.user_id", "=", userId)
+            .execute();
+
+    //withoutSearchVector
+        const sanitizedListings = listings.map((item: any) => {
+            const { search_vector, ...listing } = item;
+            return listing;
+        });
+
+        res.json(sanitizedListings);
+    } catch (err) {
+        console.error("Failed to fetch user listings:", err);
+        res.status(500).json({ error: "FAILED to fetch your listings." });
     }
 });
 
@@ -92,7 +146,23 @@ router.put('/:id', requireAuth, async (req, res) => {
         if (title != undefined) updateData.title = title;
         if (category != undefined) updateData.category = category;
         if (description != undefined) updateData.description = description;
-        if (status != undefined) updateData.status = status;
+        if (status != undefined) {
+            const cleanStatus = typeof status == 'string' ? status.trim().toLowerCase() : '';
+            if (cleanStatus != 'lost' && cleanStatus != 'found' && cleanStatus != 'reunited') {
+                return res.status(400).json({ error: 'Status must be lost, found OR reunited.' });
+            }
+            updateData.status = cleanStatus;
+
+            if (status == 'reunited' && existingListing.status != 'reunited') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                updateData.reunited_on = `${year}-${month}-${day}`;
+            } else if (cleanStatus != 'reunited') {
+                updateData.reunited_on = null;
+            }
+        }
 
         // Change to another campus location
         if (location_id != undefined) {
@@ -132,7 +202,7 @@ router.post("/", requireAuth, async (req, res) => {
             category,
             status,
             location_id,
-            listing_date
+            listing_date,
         } = req.body;
 
         // Get the logged-in user's ID
@@ -231,7 +301,7 @@ router.post("/", requireAuth, async (req, res) => {
 
         // Return the newly created listing with its coordinates
         return res.status(201).json({
-            ...newListing,
+            ...withoutSearchVector(newListing),
             latitude: campusLocation.latitude,
             longitude: campusLocation.longitude
         });

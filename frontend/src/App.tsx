@@ -5,6 +5,7 @@ import ListingForm from './Components/listingForm';
 import Listings from '../src/listings';
 import { Home } from './Home';
 import { ListingSearch } from "./ListingSearch";
+import { MyListings } from './MyListings';
 
 
 export function App() {
@@ -53,8 +54,8 @@ export function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<ListingForm />} />
-        <Route path="/my-listings" element={<div><h3>My Listings</h3><p>Manage items you've posted.</p></div>} />
         <Route path="/search" element={<ListingSearch />} />
+        <Route path="my-listings" element={<MyListings />}/>
       </Routes>
       
     </main>
