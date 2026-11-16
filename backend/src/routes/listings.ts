@@ -142,10 +142,19 @@ router.put('/:id', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'No update fields provided.' });
         }
 
-        await (db as any).updateTable('listings')
+        const updatedListing = await (db as any)
+            .updateTable("listings")
             .set(updateData)
-            .where('id', '=', id)
-            .execute();
+            .where("id", "=", id)
+            .where("user_id", "=", userId)
+            .returning("id")
+            .executeTakeFirst();
+
+            if (!updatedListing) {
+            return res.status(404).json({
+            error: "Listing no longer exists"
+            });
+        }
 
         res.json({ success: true, message: 'Listing updated successfully! '});
     } catch (err) {
@@ -302,9 +311,18 @@ router.delete('/:id', requireAuth, async (req, res) => {
             return res.status(403).json({ error: "FORBIDDEN: You can only delete your own posts!" });
         }
 
-        await (db as any).deleteFrom('listings')
-            .where('id', '=', id as any)
-            .execute();
+        const deletedListing = await (db as any)
+            .deleteFrom("listings")
+            .where("id", "=", id)
+            .where("user_id", "=", userId)
+            .returning("id")
+            .executeTakeFirst();
+
+        if (!deletedListing) {
+            return res.status(404).json({
+                error: "Listing no longer exists"
+            });
+        }
 
         res.json({ success: true, message: 'Listings deleted successfully!' });
     } catch (err) {

@@ -8,6 +8,8 @@ import { authRouter } from "./routes/auth.js";
 import cors from 'cors';
 import { router as listingsRouter} from './routes/listings.js'
 import { router as locationsRouter } from './routes/locations.js'
+import { router as commentsRouter } from "./routes/comments.js";
+import { router as usersRouter } from "./routes/users.js";
 
 import { requireAuth } from "./middleware/requireAuth.js";
 import { profileRouter } from "./routes/profile.js";
@@ -40,3 +42,5 @@ app.use("/api/auth", authRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/listings", listingsRouter);
 app.use("/api/locations", locationsRouter);
+app.use("/api/comments", commentsRouter);
+app.use("/api/users", usersRouter);
