@@ -134,6 +134,17 @@ GitHub Actions runs backend TypeScript checks, migrations, tests, and the build 
 
 The mockups use "Campus Lost and Found" as the working product name.
 
+## Deployment
+
+In production (`NODE_ENV=production`), one Express server serves both the API and the built React app, so the frontend's `/api/...` calls work without the Vite proxy. Local development is unchanged.
+
+```bash
+npm run build   # builds backend/dist and frontend/dist
+npm start       # runs migrations, then starts the server
+```
+
+Production needs `DATABASE_URL`, `SESSION_SECRET`, and `NODE_ENV=production`. The host's `PORT` is used automatically.
+
 ## Releases
 
 Releases are published as **Find My Item!** on the [Releases page](https://github.com/rbarsi/fall-2026-final-project-group-6/releases). Tags use the `V0.x.y` format.

@@ -1,4 +1,7 @@
 import express from "express";
+import path from "path";
+import { existsSync } from "fs";
+import { fileURLToPath } from "url";
 import { sql } from "kysely";
 import { db } from "./db/database.js";
 
@@ -15,6 +18,13 @@ import { requireAuth } from "./middleware/requireAuth.js";
 import { profileRouter } from "./routes/profile.js";
 export const app = express();
 
+const isProduction = process.env.NODE_ENV === "production";
+
+// The hosting service sends requests through a proxy over HTTPS.
+// Trusting it lets Express see the HTTPS connection, so secure login cookies are sent.
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -45,3 +55,16 @@ app.use("/api/listings", listingsRouter);
 app.use("/api/locations", locationsRouter);
 app.use("/api/comments", commentsRouter);
 app.use("/api/users", usersRouter);
+
+// In production, Express also serves the built React app (frontend/dist).
+// In development, Vite serves the frontend instead, so this does nothing.
+const frontendDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/dist");
+
+if (isProduction && existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+
+  // Send index.html for page addresses such as /search so React Router can show the right page
+  app.get(/^\/(?!api(\/|$)).*/, (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}

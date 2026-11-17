@@ -9,6 +9,7 @@
     "dev:backend": "npm run dev --workspace backend",
     "dev:frontend": "npm run dev --workspace frontend",
     "build": "npm run build --workspaces",
+    "start": "npm run db:migrate:prod --workspace backend && npm run start --workspace backend",
     "typecheck": "npm run typecheck --workspaces"
   },
   "allowScripts": {
