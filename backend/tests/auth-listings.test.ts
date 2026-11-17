@@ -12,6 +12,7 @@ import request from "supertest";
 import pg from "pg";
 import type { Express } from "express";
 import type { Kysely } from "kysely";
+import e from "express";
 
 let app: Express;
 let pool: pg.Pool;
@@ -407,6 +408,33 @@ async function loginAs(user: typeof testUser) {
 }
 
 describe("Campus locations", () => {
+
+  it("sets reunited_on to today when updating status to 'Reunited'how ", async () => {
+    const agent = await loginAs(testUser);
+    const created = await agent.post("/api/listings").send(testListing)
+    
+    expect(created.status).toBe(201);
+    
+    const update = await agent
+        .put(`/api/listings/${created.body.id}`)
+        .send({ status: "Reunited" });
+      
+    expect(update.status).toBe(200);
+  
+    const response = await request(app)
+          .get(`/api/listings/${created.body.id}`);
+        
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("reunited");
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const expectedDate = `${year}-${month}-${day}`;
+  
+    expect(response.body.reunited_on).toBe(expectedDate);
+  });
 
   it("lists campus locations with coordinates", async () => {
     const response = await request(app).get("/api/locations");

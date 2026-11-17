@@ -153,13 +153,13 @@ router.put('/:id', requireAuth, async (req, res) => {
             }
             updateData.status = cleanStatus;
 
-            if (status == 'reunited' && existingListing.status != 'reunited') {
+            if (cleanStatus == 'reunited') {
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
                 updateData.reunited_on = `${year}-${month}-${day}`;
-            } else if (cleanStatus != 'reunited') {
+            } else {
                 updateData.reunited_on = null;
             }
         }

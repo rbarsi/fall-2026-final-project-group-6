@@ -38,7 +38,7 @@ export function Home() {
 
     const getStatusStyle = (status: string): React.CSSProperties => {
         switch (status) {
-            case 'lost': return { background: '#ffebee', color: '#62828' };
+            case 'lost': return { background: '#ffebee', color: '#c62828' };
             case 'found': return { background: '#e8f5e9', color: '#2e7d32' };
             case 'reunited': return { background: '#e3f2fd', color: '#1565c0' };
             default: return { background: '#f5f5f5', color: '#667' };
@@ -167,7 +167,7 @@ export function Home() {
         {!loading && !error && listings.length == 0 && (
             activeSearch
                 ? <p>No listings match "{activeSearch}". Try different words.</p>
-                : <p>No lost or fond items posted yet. Be the first to post!</p>
+                : <p>No lost or found items posted yet. Be the first to post!</p>
         )}
 
         <div style={{ display: 'grid', gap: '15px' }}>
