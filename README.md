@@ -125,7 +125,10 @@ DATABASE_URL="$TEST_DATABASE_URL" npm run db:migrate --workspace backend
 npm test --workspace backend
 ```
 
-GitHub Actions runs backend TypeScript checks, migrations, tests, and the build on pushes and pull requests using a temporary Postgres database.
+GitHub Actions runs two checks on pushes and pull requests:
+
+- **Backend Tests:** TypeScript checks, migrations, tests, and the build, using a temporary Postgres database
+- **Frontend Build:** TypeScript checks and the Vite build, which catch missing files and broken imports in the React app
 
 ## UI mockups
 
