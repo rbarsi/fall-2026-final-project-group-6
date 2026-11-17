@@ -1,0 +1,33 @@
+name: Frontend Build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Catches missing files, broken imports, and type errors in the React app
+      - name: Check frontend TypeScript
+        run: npm run typecheck --workspace frontend
+
+      - name: Build frontend
+        run: npm run build --workspace frontend
