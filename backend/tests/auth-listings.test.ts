@@ -409,7 +409,7 @@ async function loginAs(user: typeof testUser) {
 
 describe("Campus locations", () => {
 
-  it("sets reunited_on to today when updating status to 'Reunited'how ", async () => {
+  it("sets reunited_on to today when updating status to 'Reunited'", async () => {
     const agent = await loginAs(testUser);
     const created = await agent.post("/api/listings").send(testListing)
     
@@ -429,11 +429,11 @@ describe("Campus locations", () => {
     
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
     const expectedDate = `${year}-${month}-${day}`;
   
-    expect(response.body.reunited_on).toBe(expectedDate);
+    expect(response.body.reunited_on.slice(0, 10)).toBe(expectedDate);
   });
 
   it("lists campus locations with coordinates", async () => {
